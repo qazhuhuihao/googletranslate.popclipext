@@ -64,51 +64,59 @@ def unquote(string, encoding='utf-8', errors='replace'):
     return ''.join(res)
 
 
-def showoutput(result):
+def showoutput(result, toclipboard):
+    os.environ['result'] = result
+    shell = 'exec ./dialog/Contents/MacOS/cocoaDialog bubble \
+                --title "Translation Result" \
+                --icon-file gt.png \
+                --text "$result"'
+    os.system(shell)
+    if toclipboard == '1':
+        os.system('echo "$result" |/usr/bin/pbcopy')
     # disk_prefix = commands.getoutput('osascript -e \'path to desktop as text\'').split(':')[0]
 
-    disk_prefix = subprocess.Popen('osascript -e \'path to desktop as text\'', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0].decode()
-    disk_prefix = disk_prefix.split(':')[0]
+    # disk_prefix = subprocess.Popen('osascript -e \'path to desktop as text\'', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0].decode()
+    # disk_prefix = disk_prefix.split(':')[0]
 
-    icon_path = disk_prefix + os.getcwd().replace('/', ':') + ':gt.png'
+    # icon_path = disk_prefix + os.getcwd().replace('/', ':') + ':gt.png'
 
-    script = '\'display dialog "%s" with icon alias ("%s") with title "Google Translate" buttons {"Copy", "OK"} default button "OK" cancel button "Copy"\'' % (result, icon_path)
-    # res = commands.getoutput('osascript -e {}'.format(script))
-    res = subprocess.Popen('osascript -e {}'.format(script), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0].decode()
-    if not res.startswith('button'):
-        os.system('echo "{}" | /usr/bin/pbcopy'.format(result))
+    # script = '\'display dialog "%s" with icon alias ("%s") with title "Google Translate" buttons {"Copy", "OK"} default button "OK" cancel button "Copy"\'' % (result, icon_path)
+    # # res = commands.getoutput('osascript -e {}'.format(script))
+    # res = subprocess.Popen('osascript -e {}'.format(script), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0].decode()
+    # if not res.startswith('button'):
+    #     os.system('echo "{}" | /usr/bin/pbcopy'.format(result))
 
-def calc_version(version_num_str):
-    version = version_num_str.strip().split('.')
-    if len(version) == 2:
-            version = int(version[0]) * 100 + int(version[1]) * 10
-    elif len(version) == 3:
-            version = int(version[0]) * 100 + int(version[1]) * 10 + int(version[2])
-    return version
+# def calc_version(version_num_str):
+#     version = version_num_str.strip().split('.')
+#     if len(version) == 2:
+#             version = int(version[0]) * 100 + int(version[1]) * 10
+#     elif len(version) == 3:
+#             version = int(version[0]) * 100 + int(version[1]) * 10 + int(version[2])
+#     return version
 
-def check_update():
-    now_time = datetime.datetime.today()
-    now_year, now_month, now_day = now_time.year, now_time.month, now_time.day
-    now_time_stamp = '{}-{}-{}'.format(now_year, now_month, now_day)
-    if now_day % 7 == 0:
-        check = open('check', 'r').read().strip()
-        if check != now_time_stamp:
-            open('check', 'w').write(now_time_stamp)
+# def check_update():
+#     now_time = datetime.datetime.today()
+#     now_year, now_month, now_day = now_time.year, now_time.month, now_time.day
+#     now_time_stamp = '{}-{}-{}'.format(now_year, now_month, now_day)
+#     if now_day % 7 == 0:
+#         check = open('check', 'r').read().strip()
+#         if check != now_time_stamp:
+#             open('check', 'w').write(now_time_stamp)
 
-            version_url = 'https://github.com/wizyoung/googletranslate.popclipext/blob/master/src/version?raw=true'
-            version_response = requests.get(version_url)
-            if version_response.status_code == 200:
-                remote_version_str = version_response.content.decode('utf-8')
-                remote_version = calc_version(remote_version_str)
-                current_version_str = open('./version', 'r').read()
-                current_version = calc_version(current_version_str)
+#             version_url = 'https://github.com/wizyoung/googletranslate.popclipext/blob/master/src/version?raw=true'
+#             version_response = requests.get(version_url)
+#             if version_response.status_code == 200:
+#                 remote_version_str = version_response.content.decode('utf-8')
+#                 remote_version = calc_version(remote_version_str)
+#                 current_version_str = open('./version', 'r').read()
+#                 current_version = calc_version(current_version_str)
 
-                if remote_version > current_version:
-                    script = '\'display dialog "Found a new version %s -- Your current version is %s.\n\nClick OK to download." with title "Check Update" buttons {"Cancel", "OK"} default button "OK" cancel button "Cancel"\'' % (remote_version_str, current_version_str)
-                    btn_res = subprocess.Popen('osascript -e {}'.format(script), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0].decode()
-                    if btn_res.startswith('button'):
-                        import webbrowser
-                        webbrowser.open('https://github.com/wizyoung/googletranslate.popclipext/releases')
+#                 if remote_version > current_version:
+#                     script = '\'display dialog "Found a new version %s -- Your current version is %s.\n\nClick OK to download." with title "Check Update" buttons {"Cancel", "OK"} default button "OK" cancel button "Cancel"\'' % (remote_version_str, current_version_str)
+#                     btn_res = subprocess.Popen('osascript -e {}'.format(script), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0].decode()
+#                     if btn_res.startswith('button'):
+#                         import webbrowser
+#                         webbrowser.open('https://github.com/wizyoung/googletranslate.popclipext/releases')
 
 
 LANGUAGES = {
@@ -250,5 +258,5 @@ if __name__ == '__main__':
     else:
         result = translator.translate(query, dest=LANGUAGES[destlang]).text
 
-    showoutput(result)
-    check_update()
+    showoutput(result,0)
+    # check_update()
